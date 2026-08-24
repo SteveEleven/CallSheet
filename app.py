@@ -4,7 +4,7 @@ from services.gemini_service import CallSheetAgent
 st.set_page_config(page_title="CallSheet AI | Agentic Cinema", layout="wide", page_icon="🎬")
 
 st.title("🎬 CallSheet: Web-Grounded Production Agent")
-st.caption("Powered by Gemini 3.1 Pro & Parallel Search API Grounding")
+st.caption("Powered by Gemini 2.5 Flash & Parallel Search API Grounding")
 
 with st.sidebar:
     st.header("⚙️ Configuration")
@@ -12,7 +12,7 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("**Active Integrations:**")
     st.success("✅ Parallel Search API (Runtime Grounding)")
-    st.success("✅ Google Gemini 3.1 Pro (Orchestration)")
+    st.success("✅ Google Gemini 2.5 Flash (Orchestration)")
 
 col1, col2 = st.columns([1, 1])
 

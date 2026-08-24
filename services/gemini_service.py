@@ -32,7 +32,7 @@ class CallSheetAgent:
         """
 
         response = self.client.models.generate_content(
-            model="gemini-3.1-pro",
+            model="gemini-2.5-flash",
             contents=prompt,
             config={"response_mime_type": "application/json"}
         )
@@ -66,7 +66,7 @@ class CallSheetAgent:
         """
 
         response = self.client.models.generate_content(
-            model="gemini-3.1-pro",
+            model="gemini-2.5-flash",
             contents=synthesis_prompt
         )
 

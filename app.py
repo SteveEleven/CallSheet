@@ -1,5 +1,13 @@
 import os
 import streamlit as st
+
+for _k in ("GEMINI_API_KEY", "GOOGLE_API_KEY", "PARALLEL_API_KEY"):
+    try:
+        if _k in st.secrets and not os.environ.get(_k):
+            os.environ[_k] = str(st.secrets[_k])
+    except Exception:
+        pass
+
 from services.gemini_service import CallSheetAgent
 
 st.set_page_config(page_title="CallSheet AI | Agentic Cinema", layout="wide", page_icon="🎬")

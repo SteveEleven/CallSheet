@@ -21,7 +21,8 @@ class CallSheetAgent:
         Analyze the following scene text and extract key production requirements in valid JSON format:
         {{
             "scenes": ["Scene numbers and titles"],
-            "primary_location": "Target location name / city for physical shooting",
+            "primary_location": "EXACTLY ONE location - the single most important shooting location. Give a specific, searchable place name including city and province/state (e.g. \"Fisgard Lighthouse, Fort Rodd Hill, Colwood BC\"). Never a list, never a generic description like \"coastal town\".",
+            "all_locations": ["Every distinct shooting location found, as searchable place names"],
             "characters": ["Cast members needed"],
             "time_of_day": "DAY / NIGHT / GOLDEN HOUR",
             "special_equipment": ["VFX, Crane, Drone, Pyro, etc."]
@@ -64,6 +65,17 @@ class CallSheetAgent:
         4. **Scene Schedule & Cast Call Times**
         5. **Special Department Notes** (Permits, Sound, Safety precautions)
         6. **Grounding Traceability**: List URLs and sources provided by Parallel.
+
+        ABSOLUTE RULES - these override every other instruction:
+        - Use ONLY facts that appear in the LIVE GROUNDED RESEARCH block above. That block is your
+          only permitted source of real-world information.
+        - If a required detail is NOT in the research - an address, a hospital, a permit authority,
+          a phone number - you MUST write exactly this and nothing else for that field:
+          "NOT FOUND IN LIVE RESEARCH - VERIFY BEFORE SHOOT DAY"
+        - NEVER supply a fact from your own training knowledge. Never write "based on general
+          knowledge", "typically", "is likely", or name a place the research did not name.
+        - A hospital address you invented could kill someone. An honest gap is always correct;
+          a plausible guess is always wrong. When in doubt, declare the gap.
         """
 
         response = self.client.models.generate_content(

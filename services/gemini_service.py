@@ -23,7 +23,8 @@ class CallSheetAgent:
             "scenes": ["Scene numbers and titles"],
             "primary_location": "EXACTLY ONE location - the single most important shooting location. Give a specific, searchable place name including city and province/state (e.g. \"Fisgard Lighthouse, Fort Rodd Hill, Colwood BC\"). Never a list, never a generic description like \"coastal town\".",
             "all_locations": ["Every distinct shooting location found, as searchable place names"],
-            "primary_city": "The city, town or municipality containing primary_location, with province/state and country (e.g. \"Colwood, British Columbia, Canada\"). This is used to find the nearest hospital, so give the municipality - never the landmark name.",
+            "primary_city": "The city, town or municipality containing primary_location, with province/state and country (e.g. \"Colwood, British Columbia, Canada\"). Never the landmark name.",
+            "primary_region": "The larger metropolitan or regional area the city sits in, ending in the province/state (e.g. \"Greater Victoria, Vancouver Island, British Columbia\"). Small towns often have no hospital of their own, so this wider region is what the hospital search uses.",
             "characters": ["Cast members needed"],
             "time_of_day": "DAY / NIGHT / GOLDEN HOUR",
             "special_equipment": ["VFX, Crane, Drone, Pyro, etc."]
@@ -44,8 +45,11 @@ class CallSheetAgent:
         breakdown = self.parse_script_and_locations(script_text)
         location_target = breakdown.get("primary_location", "Local Studio")
         city_target = breakdown.get("primary_city") or location_target
+        region_target = breakdown.get("primary_region") or city_target
 
-        raw_search_results = self.parallel.search_location_intel(location_target, city=city_target)
+        raw_search_results = self.parallel.search_location_intel(
+            location_target, city=city_target, region=region_target
+        )
         grounded_context = self.parallel.format_search_context(raw_search_results)
         sources = self.parallel.extract_sources(raw_search_results)
 

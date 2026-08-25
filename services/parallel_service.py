@@ -20,7 +20,8 @@ class ParallelSearchService:
     # searching "hospital near <landmark>" returns pages about the landmark, not hospitals.
     QUERY_TEMPLATES = [
         ("Location & Access", "{location} exact address parking and physical access notes"),
-        ("Nearest Hospital", "hospital emergency department {city} address and phone number"),
+        ("Nearest Hospital",
+         "which hospital emergency room serves {city} in {region} - nearest ER address and phone"),
         ("Permits & Jurisdiction", "filming permit and municipal jurisdiction for {location}"),
     ]
 
@@ -29,7 +30,7 @@ class ParallelSearchService:
         if not self.api_key:
             raise ValueError("PARALLEL_API_KEY is not set in environment or .env file.")
 
-    def search_location_intel(self, location_name: str, city: str = None) -> dict:
+    def search_location_intel(self, location_name: str, city: str = None, region: str = None) -> dict:
         # FIXED: Parallel uses x-api-key header, not Bearer token
         headers = {
             "x-api-key": self.api_key,
@@ -38,7 +39,11 @@ class ParallelSearchService:
 
         results = {}
         for label, template in self.QUERY_TEMPLATES:
-            query = template.format(location=location_name, city=city or location_name)
+            query = template.format(
+                location=location_name,
+                city=city or location_name,
+                region=region or city or location_name,
+            )
             try:
                 # FIXED: Parallel v1 uses search_queries list and mode
                 payload = {

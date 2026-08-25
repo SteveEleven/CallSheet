@@ -82,6 +82,12 @@ class CallSheetAgent:
           knowledge", "typically", "is likely", or name a place the research did not name.
         - A hospital address you invented could kill someone. An honest gap is always correct;
           a plausible guess is always wrong. When in doubt, declare the gap.
+        - THE HOSPITAL LINE: a source saying a hospital "serves" or "covers" a region does NOT
+          establish that it is the CLOSEST one. Do not claim "nearest" unless the research states
+          proximity or distance. Label the field "ER IDENTIFIED IN RESEARCH", name the source
+          domain it came from in brackets, and always end that section with this line verbatim:
+          "CONFIRM CLOSEST ER FOR YOUR EXACT LOCATION BEFORE SHOOT DAY - a hospital that serves
+          a region is not always the nearest one to your set."
         """
 
         response = self.client.models.generate_content(

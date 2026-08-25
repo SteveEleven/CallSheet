@@ -21,7 +21,7 @@ class ParallelSearchService:
     QUERY_TEMPLATES = [
         ("Location & Access", "{location} exact address parking and physical access notes"),
         ("Nearest Hospital",
-         "which hospital emergency room serves {city} in {region} - nearest ER address and phone"),
+         "closest emergency room to {city} by driving distance - which ER hospital in {region} is nearest, address and phone"),
         ("Permits & Jurisdiction", "filming permit and municipal jurisdiction for {location}"),
     ]
 

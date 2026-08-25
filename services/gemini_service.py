@@ -44,6 +44,7 @@ class CallSheetAgent:
 
         raw_search_results = self.parallel.search_location_intel(location_target)
         grounded_context = self.parallel.format_search_context(raw_search_results)
+        sources = self.parallel.extract_sources(raw_search_results)
 
         synthesis_prompt = f"""
         You are a seasoned Production Coordinator.
@@ -73,5 +74,7 @@ class CallSheetAgent:
         return {
             "breakdown": breakdown,
             "grounded_context": grounded_context,
+            "sources": sources,
+            "location_target": location_target,
             "call_sheet_markdown": response.text
         }

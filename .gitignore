@@ -1,13 +1,8 @@
 .env
-__pycache__/
-*.pyc
-.DS_Store
-.streamlit/secrets.toml
-# Ensure environment and secrets are ignored
-.env
 .env.*
 .streamlit/secrets.toml
 __pycache__/
 *.pyc
+.DS_Store
 .venv/
 venv/

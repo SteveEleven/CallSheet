@@ -23,6 +23,7 @@ class CallSheetAgent:
             "scenes": ["Scene numbers and titles"],
             "primary_location": "EXACTLY ONE location - the single most important shooting location. Give a specific, searchable place name including city and province/state (e.g. \"Fisgard Lighthouse, Fort Rodd Hill, Colwood BC\"). Never a list, never a generic description like \"coastal town\".",
             "all_locations": ["Every distinct shooting location found, as searchable place names"],
+            "primary_city": "The city, town or municipality containing primary_location, with province/state and country (e.g. \"Colwood, British Columbia, Canada\"). This is used to find the nearest hospital, so give the municipality - never the landmark name.",
             "characters": ["Cast members needed"],
             "time_of_day": "DAY / NIGHT / GOLDEN HOUR",
             "special_equipment": ["VFX, Crane, Drone, Pyro, etc."]
@@ -42,8 +43,9 @@ class CallSheetAgent:
     def generate_call_sheet(self, script_text: str, shooting_date: str = "Tomorrow") -> dict:
         breakdown = self.parse_script_and_locations(script_text)
         location_target = breakdown.get("primary_location", "Local Studio")
+        city_target = breakdown.get("primary_city") or location_target
 
-        raw_search_results = self.parallel.search_location_intel(location_target)
+        raw_search_results = self.parallel.search_location_intel(location_target, city=city_target)
         grounded_context = self.parallel.format_search_context(raw_search_results)
         sources = self.parallel.extract_sources(raw_search_results)
 

@@ -104,6 +104,11 @@ class ParallelSearchService:
 
         return sources
 
+    # How much of each source the model gets to read. Addresses and phone numbers
+    # often sit in the second or third excerpt, so passing only the first loses them.
+    MAX_EXCERPTS_PER_SOURCE = 3
+    MAX_CHARS_PER_SOURCE = 1200
+
     def format_search_context(self, search_results: dict) -> str:
         context_chunks = []
         for query, data in search_results.items():
@@ -112,8 +117,11 @@ class ParallelSearchService:
                 for item in data["results"]:
                     title = item.get("title", "Source")
                     # FIXED: Parallel returns a list of 'excerpts' instead of 'snippet'
-                    excerpts = item.get("excerpts", [])
-                    snippet = excerpts[0][:500] if excerpts else ""
+                    excerpts = item.get("excerpts", []) or []
+                    joined = " ".join(
+                        e.strip() for e in excerpts[:self.MAX_EXCERPTS_PER_SOURCE] if e
+                    )
+                    snippet = joined[:self.MAX_CHARS_PER_SOURCE]
                     url = item.get("url", "")
                     context_chunks.append(f"- **{title}** ({url}): {snippet}")
             else:

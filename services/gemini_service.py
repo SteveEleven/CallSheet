@@ -22,9 +22,9 @@ class CallSheetAgent:
         {{
             "film_title": "The title of the film exactly as written in the script text (look for a title line, a heading, or a TITLE card). If the text states no title, return exactly UNTITLED. Never invent one.",
             "scenes": ["Scene numbers and titles"],
-            "primary_location": "EXACTLY ONE location - the single most important shooting location. Give a specific, searchable place name including city and province/state (e.g. \"Fisgard Lighthouse, Fort Rodd Hill, Colwood BC\"). Never a list, never a generic description like \"coastal town\".",
+            "primary_location": "EXACTLY ONE location. If the text names no real, findable place on Earth - it is vague (\"a coastal town\", \"a car\", \"a room\") or fictional (Hogwarts, a Mars colony) - return exactly UNKNOWN. Never guess a real place the text does not name. Otherwise: EXACTLY ONE location - the single most important shooting location. Give a specific, searchable place name including city and province/state (e.g. \"Fisgard Lighthouse, Fort Rodd Hill, Colwood BC\"). Never a list, never a generic description like \"coastal town\".",
             "all_locations": ["Every distinct shooting location found, as searchable place names"],
-            "primary_city": "The city, town or municipality containing primary_location, with province/state and country (e.g. \"Colwood, British Columbia, Canada\"). Never the landmark name.",
+            "primary_city": "The city, town or municipality the text names, with province/state and country (e.g. \"Victoria, British Columbia, Canada\"). If the text names a real city even when primary_location is UNKNOWN (a vague landmark in a named town), still return that city. Return exactly UNKNOWN only if the text names no real city. Never the landmark name. Never guess a city the text does not name.",
             "primary_region": "The larger metropolitan or regional area the city sits in, ending in the province/state (e.g. \"Greater Victoria, Vancouver Island, British Columbia\"). Small towns often have no hospital of their own, so this wider region is what the hospital search uses.",
             "characters": ["Cast members needed"],
             "time_of_day": "DAY / NIGHT / GOLDEN HOUR",
@@ -35,18 +35,58 @@ class CallSheetAgent:
         {script_text}
         """
 
-        response = self.client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
-            config={"response_mime_type": "application/json"}
-        )
-        return json.loads(response.text)
+        last_error = None
+        for attempt in range(2):
+            response = self.client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config={"response_mime_type": "application/json"}
+            )
+            try:
+                return json.loads(response.text)
+            except json.JSONDecodeError as e:
+                last_error = e
+                continue
+        raise ValueError(
+            "The script breakdown came back in a format we could not read. "
+            "Please try again."
+        ) from last_error
 
     def generate_call_sheet(self, script_text: str, shooting_date: str = "Tomorrow") -> dict:
         breakdown = self.parse_script_and_locations(script_text)
-        location_target = breakdown.get("primary_location", "Local Studio")
-        city_target = breakdown.get("primary_city") or location_target
-        region_target = breakdown.get("primary_region") or city_target
+        location_target = (breakdown.get("primary_location") or "").strip()
+        city_target = (breakdown.get("primary_city") or "").strip()
+        region_target = (breakdown.get("primary_region") or "").strip()
+
+        UNUSABLE = {"", "unknown", "n/a", "none", "tbd", "local studio", "unspecified"}
+
+        def _unusable(value: str) -> bool:
+            return value.lower() in UNUSABLE
+
+        # One extra breakdown pass when the model zeros a city that a longer
+        # synopsis actually named. Short unnamed lines ("a car") skip this.
+        if _unusable(city_target) and len(script_text.strip()) > 60:
+            breakdown = self.parse_script_and_locations(script_text)
+            location_target = (breakdown.get("primary_location") or "").strip()
+            city_target = (breakdown.get("primary_city") or "").strip()
+            region_target = (breakdown.get("primary_region") or "").strip()
+
+        # A fictional or unnamed landmark (Hogwarts, "a car") is not shootable
+        # unless the text also names a real city. City is the gate: without one,
+        # searching would return real sources for a place the crew is not going.
+        if _unusable(city_target):
+            return {
+                "insufficient_location": True,
+                "breakdown": breakdown,
+                "grounded_context": "",
+                "sources": [],
+                "location_target": location_target or "UNKNOWN",
+                "call_sheet_markdown": "",
+            }
+
+        if _unusable(location_target):
+            location_target = city_target
+        region_target = region_target if not _unusable(region_target) else city_target
 
         raw_search_results = self.parallel.search_location_intel(
             location_target, city=city_target, region=region_target
@@ -102,6 +142,14 @@ class CallSheetAgent:
           knowledge", "typically", "is likely", or name a place the research did not name.
         - A hospital address you invented could kill someone. An honest gap is always correct;
           a plausible guess is always wrong. When in doubt, declare the gap.
+        - THE HOSPITAL LINE - SAME-SOURCE RULE: the hospital NAME, its ADDRESS and its PHONE
+          must all come from THE SAME single source entry in the research. Never assemble a
+          hospital from parts of different sources. If the research names hospital A but the
+          only address or phone you can see belongs to hospital B, or you cannot tell which
+          hospital an address belongs to, keep the name and write
+          "NOT FOUND IN LIVE RESEARCH - VERIFY BEFORE SHOOT DAY" for the address and phone.
+          A real address attached to the wrong hospital is more dangerous than no address,
+          because it looks verified.
         - THE HOSPITAL LINE: a source saying a hospital "serves" or "covers" a region does NOT
           establish that it is the CLOSEST one. Do not claim "nearest" unless the research states
           proximity or distance. Label the field "ER IDENTIFIED IN RESEARCH", name the source

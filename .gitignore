@@ -1,9 +1,26 @@
+# secrets
 .env
 .env.*
 .streamlit/secrets.toml
+
+# python
 __pycache__/
 *.pyc
-.DS_Store
 .venv/
 venv/
+
+# macOS
+.DS_Store
+
+# video working files - large, not part of the project
+*.mov
+*.mp4
+_frames/
+
+# local planning docs, not part of the submission
+HANDOFF.md
+HANDOFF_VIDEO.md
 CallSheet_Plan.pdf
+CallSheet_Runbook.pdf
+CallSheet_Video_Script.pdf
+*.pdf

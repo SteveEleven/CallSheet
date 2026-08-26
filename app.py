@@ -117,17 +117,40 @@ if generate_btn:
                 agent = CallSheetAgent()
                 result = agent.generate_call_sheet(script_input, shooting_date=str(shoot_date))
 
-                with col2:
-                    st.subheader("2. Generated Call Sheet")
-                    st.markdown(result["call_sheet_markdown"])
-                    st.markdown("---")
-                    render_sources(result.get("sources", []), result.get("location_target", ""))
+                if result.get("insufficient_location"):
+                    with col2:
+                        st.subheader("2. Generated Call Sheet")
+                        st.warning(
+                            "**No shootable location found in this scene.**\n\n"
+                            "CallSheet only reports facts it can verify against live web results, "
+                            "so it will not research a location the script never named. Add a real, "
+                            "findable place — a town, a landmark, an address — and generate again.\n\n"
+                            "Guessing a location here would return real, citable research about "
+                            "somewhere your crew is not going."
+                        )
+                        st.markdown("**What the breakdown did find:**")
+                        st.json(result["breakdown"])
+                else:
+                    with col2:
+                        st.subheader("2. Generated Call Sheet")
+                        srcs = result.get("sources", [])
+                        b1, b2 = st.columns(2)
+                        b1.metric("Sources retrieved live from Parallel", len(srcs))
+                        b2.metric("Location researched", result.get("location_target", "—"))
+                        st.caption(
+                            "Every fact below was retrieved at generation time. "
+                            "The full source list is at the bottom of this call sheet."
+                        )
+                        st.markdown("---")
+                        st.markdown(result["call_sheet_markdown"])
+                        st.markdown("---")
+                        render_sources(srcs, result.get("location_target", ""))
 
-                with st.expander("🔍 Runtime pipeline detail (script breakdown & raw Parallel output)"):
-                    st.markdown("#### Gemini script breakdown")
-                    st.json(result["breakdown"])
-                    st.markdown("#### Parallel Search data extracted at runtime")
-                    st.text(result["grounded_context"])
+                    with st.expander("🔍 Runtime pipeline detail (script breakdown & raw Parallel output)"):
+                        st.markdown("#### Gemini script breakdown")
+                        st.json(result["breakdown"])
+                        st.markdown("#### Parallel Search data extracted at runtime")
+                        st.text(result["grounded_context"])
 
             except Exception as e:
                 st.error(f"Error during agent execution: {str(e)}")

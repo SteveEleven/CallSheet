@@ -20,6 +20,7 @@ class CallSheetAgent:
         You are an expert Hollywood Assistant Director (1st AD).
         Analyze the following scene text and extract key production requirements in valid JSON format:
         {{
+            "film_title": "The title of the film exactly as written in the script text (look for a title line, a heading, or a TITLE card). If the text states no title, return exactly UNTITLED. Never invent one.",
             "scenes": ["Scene numbers and titles"],
             "primary_location": "EXACTLY ONE location - the single most important shooting location. Give a specific, searchable place name including city and province/state (e.g. \"Fisgard Lighthouse, Fort Rodd Hill, Colwood BC\"). Never a list, never a generic description like \"coastal town\".",
             "all_locations": ["Every distinct shooting location found, as searchable place names"],
@@ -73,9 +74,28 @@ class CallSheetAgent:
         6. **Grounding Traceability**: List URLs and sources provided by Parallel.
 
         ABSOLUTE RULES - these override every other instruction:
-        - Use ONLY facts that appear in the LIVE GROUNDED RESEARCH block above. That block is your
-          only permitted source of real-world information.
-        - If a required detail is NOT in the research - an address, a hospital, a permit authority,
+
+        SCOPE - read this first. These rules govern REAL-WORLD FACTS ONLY: street addresses,
+        hospitals, permit authorities, phone numbers, email addresses, opening hours, access
+        restrictions, and the names of real organisations. Those are things you must look up.
+        They do NOT govern production planning fields - film title, day number, unit base,
+        crew call and cast call times, scene order, department notes, or anything drawn from
+        the SCRIPT BREAKDOWN. Those are the coordinator's decisions, not facts about the world.
+        Fill those in normally and sensibly:
+          * FILM TITLE: use the "film_title" value from the SCRIPT BREAKDOWN verbatim.
+            If it is UNTITLED, write UNTITLED. Never invent a title.
+          * PRODUCTION COMPANY, DIRECTOR, PRODUCER, 1st AD, and any other named crew member
+            or company: write "TBC". These are REAL PEOPLE AND REAL BUSINESSES. Inventing a
+            person's name and printing it on a production document is never acceptable, not
+            even as a realistic-looking placeholder.
+          * DAY #, UNIT BASE, CALL TIMES: propose sensible values for the shoot date given.
+          * WEATHER / SUNRISE / SUNSET: write "TBC - check forecast closer to the date".
+        Never write "NOT FOUND IN LIVE RESEARCH" against any of those fields. Doing so makes
+        the call sheet look broken rather than careful.
+
+        - For REAL-WORLD FACTS: use ONLY what appears in the LIVE GROUNDED RESEARCH block above.
+          That block is your only permitted source of real-world information.
+        - If such a fact is NOT in the research - an address, a hospital, a permit authority,
           a phone number - you MUST write exactly this and nothing else for that field:
           "NOT FOUND IN LIVE RESEARCH - VERIFY BEFORE SHOOT DAY"
         - NEVER supply a fact from your own training knowledge. Never write "based on general

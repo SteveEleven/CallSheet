@@ -24,3 +24,9 @@ CallSheet_Plan.pdf
 CallSheet_Runbook.pdf
 CallSheet_Video_Script.pdf
 *.pdf
+
+# scratch frame dumps from video editing
+_frames/
+_f*/
+_cs/
+build.log

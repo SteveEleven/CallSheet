@@ -93,6 +93,7 @@ class CallSheetAgent:
         )
         grounded_context = self.parallel.format_search_context(raw_search_results)
         sources = self.parallel.extract_sources(raw_search_results)
+        sources, dead_links = self.parallel.check_link_health(sources)
 
         synthesis_prompt = f"""
         You are a seasoned Production Coordinator.
@@ -167,6 +168,7 @@ class CallSheetAgent:
             "breakdown": breakdown,
             "grounded_context": grounded_context,
             "sources": sources,
+            "dead_links": dead_links,
             "location_target": location_target,
             "call_sheet_markdown": response.text
         }

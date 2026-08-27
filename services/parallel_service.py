@@ -1,5 +1,6 @@
 import os
 import requests
+from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -108,6 +109,47 @@ class ParallelSearchService:
     # often sit in the second or third excerpt, so passing only the first loses them.
     MAX_EXCERPTS_PER_SOURCE = 3
     MAX_CHARS_PER_SOURCE = 1200
+
+    # A citation nobody can open is not a citation. Search indexes go stale, so every
+    # source is checked for a live response before it is offered to the user as proof.
+    LINK_CHECK_TIMEOUT = 4
+    LINK_CHECK_WORKERS = 12
+
+    def check_link_health(self, sources: list) -> tuple:
+        """Return (reachable_sources, unreachable_count).
+
+        Each source URL gets one GET (streamed, body discarded). A source is
+        dropped ONLY when the server positively answers 4xx/5xx. HEAD is not
+        used: some hosts answer HEAD 200 for a URL that GET 404s.
+
+        This FAILS OPEN on purpose: a timeout, DNS failure or blocked request tells us
+        something about our own network, not about the link. Dropping a good citation
+        because our check was slow would be a worse error than showing one that 404s.
+        """
+        if not sources:
+            return [], 0
+
+        def alive(src):
+            url = src.get("url", "")
+            if not url:
+                return False
+            headers = {"User-Agent": "Mozilla/5.0 (compatible; CallSheet/1.0)"}
+            try:
+                # GET, not HEAD: some hosts (bc.211.ca) answer HEAD 200 for a
+                # page that GET 404s. stream=True so we do not download the body.
+                r = requests.get(url, timeout=self.LINK_CHECK_TIMEOUT,
+                                 allow_redirects=True, headers=headers,
+                                 stream=True)
+                r.close()
+                return r.status_code < 400
+            except Exception:
+                return True  # fail open - see docstring
+
+        with ThreadPoolExecutor(max_workers=self.LINK_CHECK_WORKERS) as pool:
+            results = list(pool.map(alive, sources))
+
+        reachable = [s for s, ok in zip(sources, results) if ok]
+        return reachable, len(sources) - len(reachable)
 
     def format_search_context(self, search_results: dict) -> str:
         context_chunks = []

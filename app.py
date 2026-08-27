@@ -135,12 +135,21 @@ if generate_btn:
                         st.subheader("2. Generated Call Sheet")
                         srcs = result.get("sources", [])
                         b1, b2 = st.columns(2)
-                        b1.metric("Sources retrieved live from Parallel", len(srcs))
+                        b1.metric("Verified sources from Parallel", len(srcs))
                         b2.metric("Location researched", result.get("location_target", "—"))
-                        st.caption(
-                            "Every fact below was retrieved at generation time. "
+                        dead = result.get("dead_links", 0)
+                        note = (
+                            "Every fact below was retrieved at generation time, and every source "
+                            "link was checked for a live response before being cited. "
                             "The full source list is at the bottom of this call sheet."
                         )
+                        if dead:
+                            note += (
+                                f"  \n\n**{dead} source"
+                                f"{'' if dead == 1 else 's'} returned a dead link and "
+                                "were excluded** — a citation you cannot open is not a citation."
+                            )
+                        st.caption(note)
                         st.markdown("---")
                         st.markdown(result["call_sheet_markdown"])
                         st.markdown("---")
